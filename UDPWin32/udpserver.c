@@ -10,7 +10,11 @@ Simple UDP Server
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
 
 #define BUFLEN 512  //Max length of buffer
-#define PORT 8888   //The port on which to listen for incoming data
+#define PORT 5683   //The port on which to listen for incoming data
+
+int PrintReceivedData(char *buf, int len, IN_ADDR addr, USHORT port);
+
+typedef int*(*fnPtrDisplayRoutine)(char *buf, int len, IN_ADDR addr, USHORT port);
 
 int main()
 {
@@ -21,6 +25,8 @@ int main()
 	WSADATA wsa;
 	//int recCode = 0;
 	int nError = 0;
+
+	fnPtrDisplayRoutine display = &PrintReceivedData; //fnptr to the dsiplay routine
 
 	slen = sizeof(si_other);
 
@@ -89,7 +95,7 @@ int main()
 		}
 		else if (recv_len > 0)
 		{
-			PrintReceivedData(buf, 512, si_other.sin_addr, si_other.sin_port);
+			int t = display(buf, 512, si_other.sin_addr, si_other.sin_port);
 
 			//print details of the client/peer and the data received
 			//printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
@@ -117,5 +123,5 @@ int PrintReceivedData(char *buf, int len, IN_ADDR addr, USHORT port)
 	printf("Received packet from %s:%d\n", inet_ntoa(addr), ntohs(port));
 	printf("Data: %s\n", buf);
 
-	return 0;
+	return 21;
 }

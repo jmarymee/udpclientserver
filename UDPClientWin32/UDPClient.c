@@ -11,7 +11,7 @@ Simple udp client
 
 #define SERVER "127.0.0.1"  //ip address of udp server
 #define BUFLEN 512  //Max length of buffer
-#define PORT 8888   //The port on which to listen for incoming data
+#define PORT 5683   //The port on which to listen for incoming data
 
 int main(void)
 {
@@ -60,13 +60,13 @@ int main(void)
 		//clear the buffer by filling null, it might have previously received data
 		memset(buf, '\0', BUFLEN);
 		//try to receive some data, this is a blocking call
-		if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == SOCKET_ERROR)
-		{
-			printf("recvfrom() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
+		//if (recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen) == SOCKET_ERROR)
+		//{
+		//	printf("recvfrom() failed with error code : %d", WSAGetLastError());
+		//	exit(EXIT_FAILURE);
+		//}
 
-		puts(buf);
+		//puts(buf);
 	}
 
 	closesocket(s);
