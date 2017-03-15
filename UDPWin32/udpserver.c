@@ -19,6 +19,8 @@ int main()
 	int slen, recv_len;
 	char buf[BUFLEN];
 	WSADATA wsa;
+	//int recCode = 0;
+	int nError = 0;
 
 	slen = sizeof(si_other);
 
@@ -51,36 +53,69 @@ int main()
 	}
 	puts("Bind done");
 
+	//Now put into non-blocking mode
+	u_long iMode = 1; //nonzero for non-blocking, zero (default) for blocking
+	int ccode = ioctlsocket(s, FIONBIO, &iMode);
+
 	//keep listening for data
 	while (1)
 	{
-		printf("Waiting for data...");
+		printf("Waiting for data...\n");
 		fflush(stdout);
 
 		//clear the buffer by filling null, it might have previously received data
 		memset(buf, '\0', BUFLEN);
 
 		//try to receive some data, this is a blocking call
-		if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == SOCKET_ERROR)
-		{
-			printf("recvfrom() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
-		}
+		//if ((recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == SOCKET_ERROR)
+		//{
+		//	printf("recvfrom() failed with error code : %d", WSAGetLastError());
+		//	exit(EXIT_FAILURE);
+		//}
 
-		//print details of the client/peer and the data received
-		printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-		printf("Data: %s\n", buf);
-
-		//now reply the client with the same data
-		if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
+		recv_len = recvfrom(s, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen);
+		if (recv_len == 0)
 		{
-			printf("sendto() failed with error code : %d", WSAGetLastError());
-			exit(EXIT_FAILURE);
+			nError = WSAGetLastError();
+			switch (nError)
+			{
+			case WSAEWOULDBLOCK:
+				continue;
+				break;
+			default:
+				printf("Error on receive. Value is: %d\n", nError);
+				break;
+			}
 		}
+		else if (recv_len > 0)
+		{
+			PrintReceivedData(buf, 512, si_other.sin_addr, si_other.sin_port);
+
+			//print details of the client/peer and the data received
+			//printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+			//printf("Data: %s\n", buf);
+
+			//now reply the client with the same data
+			if (sendto(s, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == SOCKET_ERROR)
+			{
+				printf("sendto() failed with error code : %d", WSAGetLastError());
+				//exit(EXIT_FAILURE);
+			}
+		}
+		Sleep(1000);
 	}
 
 	closesocket(s);
 	WSACleanup();
+
+	return 0;
+}
+
+int PrintReceivedData(char *buf, int len, IN_ADDR addr, USHORT port)
+{
+	//print details of the client/peer and the data received
+	printf("Received packet from %s:%d\n", inet_ntoa(addr), ntohs(port));
+	printf("Data: %s\n", buf);
 
 	return 0;
 }
